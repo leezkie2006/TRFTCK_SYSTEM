@@ -49,7 +49,8 @@ public class UserDao {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String status = rs.getString("status");
-                    if (!"ACTIVE".equalsIgnoreCase(status)) {
+                    // Accepting both ACTIVE or APPROVED based on your current DB entries
+                    if (!"ACTIVE".equalsIgnoreCase(status) && !"APPROVED".equalsIgnoreCase(status)) {
                         System.out.println("Login denied. Account status is: " + status);
                         return null;
                     }
@@ -91,5 +92,50 @@ public class UserDao {
             System.out.println("Error fetching users: " + e.getMessage());
         }
         return userList;
+    }
+
+    public List<User> getPendingUsers() {
+        List<User> pendingList = new ArrayList<>();
+        String sql = "SELECT id, username, password, roles, status FROM users WHERE status = 'PENDING'";
+
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql);
+             ResultSet rs = pstmt.executeQuery()) {
+
+            while (rs.next()) {
+                pendingList.add(new User(
+                        rs.getInt("id"),
+                        rs.getString("username"),
+                        rs.getString("password"),
+                        rs.getString("roles"),
+                        rs.getString("status")
+                ));
+            }
+        } catch (SQLException e) {
+            System.out.println("Error fetching users: " + e.getMessage());
+        }
+        return pendingList;
+    }
+
+    public boolean approveUser(int userId) {
+        String sql = "UPDATE users SET status = 'ACTIVE' WHERE id = ?";
+
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            int rowsUpdated = pstmt.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                System.out.println("User ID " + userId + " approved successfully.");
+                return true;
+            } else {
+                System.out.println("User ID not found.");
+                return false;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error approving users: " + e.getMessage());
+            return false;
+        }
     }
 }

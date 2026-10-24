@@ -6,7 +6,6 @@ import com.scc.model.User;
 import java.util.Scanner;
 
 public class Authentication {
-
     private final UserDao userDao;
     private final Scanner sc;
 
@@ -16,10 +15,10 @@ public class Authentication {
     }
 
     public void start() {
-        boolean running = true;
-        while (running) {
+        boolean exit = false;
+        while (!exit) {
             System.out.println("\n==========================================");
-            System.out.println("        TRAFFIC TRACKING SYSTEM           ");
+            System.out.println("          TRAFFIC TRACKING SYSTEM         ");
             System.out.println("==========================================");
             System.out.println("1. Login");
             System.out.println("2. Register");
@@ -29,35 +28,13 @@ public class Authentication {
 
             switch (choice) {
                 case "1":
-                    login();
+                    handleLogin();
                     break;
                 case "2":
-                    System.out.print("Enter new username: ");
-                    String user = sc.nextLine();
-                    System.out.print("Enter password: ");
-                    String pass = sc.nextLine();
-
-                    System.out.print("Select Role [1] OFFICER | [2] ADMIN: ");
-                    int roleChoice = sc.nextInt();
-                    sc.nextLine(); // Clear scanner buffer
-
-                    String role;
-                    switch (roleChoice) {
-                        case 1:
-                            role = "OFFICER";
-                            break;
-                        case 2:
-                            role = "ADMIN";
-                            break;
-                        default:
-                            role = "OFFICER";
-                            break;
-                    }
-
-                    userDao.registerUser(user, pass, role);
+                    handleRegistration();
                     break;
                 case "3":
-                    running = false;
+                    exit = true;
                     System.out.println("Exiting application. Goodbye!");
                     break;
                 default:
@@ -66,21 +43,41 @@ public class Authentication {
         }
     }
 
-    private void login() {
+    private void handleLogin() {
+        System.out.println("\n--- USER LOGIN ---");
         System.out.print("Enter username: ");
         String username = sc.nextLine();
+
         System.out.print("Enter password: ");
         String password = sc.nextLine();
 
-        User user = userDao.loginUser(username, password);
+        User loggedInUser = userDao.loginUser(username, password);
 
-        if (user != null) {
-            System.out.println("\n -> Welcome " + user.username() + " | ROLE: " + user.roles() + "");
-            switch (user.roles()) {
-                case "ADMIN" -> new AdminMenu(userDao, sc).display(user);
-                case "OFFICER" -> System.out.println("Officer menu coming soon!");
-                default -> System.out.println("Account roles not found!");
+        if (loggedInUser != null) {
+            System.out.println("Login successful!");
+
+            // Route based on user role
+            if ("ADMIN".equalsIgnoreCase(loggedInUser.roles())) {
+                AdminMenu adminMenu = new AdminMenu(userDao, sc);
+                adminMenu.display(loggedInUser);
+            } else {
+                // Regular user view or menu placeholder
+                System.out.println("Welcome, " + loggedInUser.username() + "! (User dashboard coming soon)");
             }
         }
+    }
+
+    private void handleRegistration() {
+        System.out.println("\n--- USER REGISTRATION ---");
+        System.out.print("Enter desired username: ");
+        String username = sc.nextLine();
+
+        System.out.print("Enter password: ");
+        String password = sc.nextLine();
+
+        System.out.print("Enter role (ADMIN / USER): ");
+        String role = sc.nextLine();
+
+        userDao.registerUser(username, password, role);
     }
 }
