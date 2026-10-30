@@ -56,12 +56,12 @@ public class Authentication {
         if (loggedInUser != null) {
             System.out.println("Login successful!");
 
-            // Route based on user role
             if ("ADMIN".equalsIgnoreCase(loggedInUser.roles())) {
                 AdminMenu adminMenu = new AdminMenu(userDao, sc);
                 adminMenu.display(loggedInUser);
+            } else if ("OFFICER".equalsIgnoreCase(loggedInUser.roles())) {
+                System.out.println("Welcome, Officer " + loggedInUser.username() + "! (Officer dashboard coming soon)");
             } else {
-                // Regular user view or menu placeholder
                 System.out.println("Welcome, " + loggedInUser.username() + "! (User dashboard coming soon)");
             }
         }
@@ -75,7 +75,7 @@ public class Authentication {
         System.out.print("Enter password: ");
         String password = sc.nextLine();
 
-        System.out.print("Enter role (ADMIN / USER): ");
+        System.out.print("Enter role (ADMIN / OFFICER / USER): ");
         String role = sc.nextLine();
 
         userDao.registerUser(username, password, role);

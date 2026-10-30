@@ -34,6 +34,30 @@ public class UserDao {
         }
     }
 
+    public boolean addUserDirectly(String username, String password, String role, String status) {
+        String sql = """
+            INSERT INTO users (username, password, roles, status)
+            VALUES (?, ?, ?, ?)
+        """;
+
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, password);
+            pstmt.setString(3, role.toUpperCase());
+            pstmt.setString(4, status.toUpperCase());
+
+            pstmt.executeUpdate();
+            System.out.println("New user added successfully.");
+            return true;
+
+        } catch (SQLException e) {
+            System.out.println("Failed to add user: " + e.getMessage());
+            return false;
+        }
+    }
+
     public User loginUser(String username, String password) {
         String sql = """
             SELECT id, username, roles, status FROM users
@@ -49,7 +73,6 @@ public class UserDao {
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String status = rs.getString("status");
-                    // Accepting both ACTIVE or APPROVED based on your current DB entries
                     if (!"ACTIVE".equalsIgnoreCase(status) && !"APPROVED".equalsIgnoreCase(status)) {
                         System.out.println("Login denied. Account status is: " + status);
                         return null;
@@ -135,6 +158,52 @@ public class UserDao {
             }
         } catch (SQLException e) {
             System.out.println("Error approving users: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean updateUserRoleAndStatus(int userId, String newRole, String newStatus) {
+        String sql = "UPDATE users SET roles = ?, status = ? WHERE id = ?";
+
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newRole.toUpperCase());
+            pstmt.setString(2, newStatus.toUpperCase());
+            pstmt.setInt(3, userId);
+
+            int rowsUpdated = pstmt.executeUpdate();
+            if (rowsUpdated > 0) {
+                System.out.println("User ID " + userId + " updated successfully.");
+                return true;
+            } else {
+                System.out.println("User ID not found.");
+                return false;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error updating user: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean deleteUser(int userId) {
+        String sql = "DELETE FROM users WHERE id = ?";
+
+        try (Connection conn = DataBaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            int rowsUpdated = pstmt.executeUpdate();
+
+            if (rowsUpdated > 0) {
+                System.out.println("User ID " + userId + " deleted successfully.");
+                return true;
+            } else {
+                System.out.println("User ID not found.");
+                return false;
+            }
+        } catch (SQLException e) {
+            System.out.println("Error deleting user: " + e.getMessage());
             return false;
         }
     }
