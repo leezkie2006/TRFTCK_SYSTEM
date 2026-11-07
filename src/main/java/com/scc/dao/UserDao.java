@@ -1,6 +1,7 @@
 package com.scc.dao;
 
 import com.scc.model.User;
+import com.scc.util.DatabaseConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -17,7 +18,7 @@ public class UserDao {
             VALUES (?, ?, ?, 'PENDING')
         """;
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, username);
@@ -40,7 +41,7 @@ public class UserDao {
             VALUES (?, ?, ?, ?)
         """;
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, username);
@@ -64,7 +65,7 @@ public class UserDao {
             WHERE username = ? AND password = ?
         """;
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, username);
@@ -98,7 +99,7 @@ public class UserDao {
         List<User> userList = new ArrayList<>();
         String sql = "SELECT id, username, password, roles, status FROM users";
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
@@ -121,7 +122,7 @@ public class UserDao {
         List<User> pendingList = new ArrayList<>();
         String sql = "SELECT id, username, password, roles, status FROM users WHERE status = 'PENDING'";
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
              ResultSet rs = pstmt.executeQuery()) {
 
@@ -143,7 +144,7 @@ public class UserDao {
     public boolean approveUser(int userId) {
         String sql = "UPDATE users SET status = 'ACTIVE' WHERE id = ?";
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, userId);
@@ -165,7 +166,7 @@ public class UserDao {
     public boolean updateUserRoleAndStatus(int userId, String newRole, String newStatus) {
         String sql = "UPDATE users SET roles = ?, status = ? WHERE id = ?";
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, newRole.toUpperCase());
@@ -189,13 +190,13 @@ public class UserDao {
     public boolean deleteUser(int userId) {
         String sql = "DELETE FROM users WHERE id = ?";
 
-        try (Connection conn = DataBaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, userId);
-            int rowsUpdated = pstmt.executeUpdate();
+            int rowsDeleted = pstmt.executeUpdate();
 
-            if (rowsUpdated > 0) {
+            if (rowsDeleted > 0) {
                 System.out.println("User ID " + userId + " deleted successfully.");
                 return true;
             } else {

@@ -1,30 +1,34 @@
 package com.scc.ui;
 
+import com.scc.dao.ActivityLogDao;
 import com.scc.dao.UserDao;
+import com.scc.dao.ViolationDao;
 import com.scc.model.User;
 
 import java.util.Scanner;
 
 public class Authentication {
     private final UserDao userDao;
+    private final ActivityLogDao logDao;
     private final Scanner sc;
 
-    public Authentication(UserDao userDao, Scanner sc) {
+    public Authentication(UserDao userDao, ActivityLogDao logDao, Scanner sc) {
         this.userDao = userDao;
+        this.logDao = logDao;
         this.sc = sc;
     }
 
     public void start() {
         boolean exit = false;
         while (!exit) {
-            System.out.println("\n==========================================");
-            System.out.println("          TRAFFIC TRACKING SYSTEM         ");
-            System.out.println("==========================================");
+            System.out.println("\n==========================================================");
+            System.out.println("            ONLINE TRAFFIC VIOLATION SYSTEM               ");
+            System.out.println("==========================================================");
             System.out.println("1. Login");
-            System.out.println("2. Register");
+            System.out.println("2. Register New Account");
             System.out.println("3. Exit");
-            System.out.print("Choose an option: ");
-            String choice = sc.nextLine();
+            System.out.print("Choose an option (1-3): ");
+            String choice = sc.nextLine().trim();
 
             switch (choice) {
                 case "1":
@@ -35,7 +39,7 @@ public class Authentication {
                     break;
                 case "3":
                     exit = true;
-                    System.out.println("Exiting application. Goodbye!");
+                    System.out.println("Exiting system. Goodbye!");
                     break;
                 default:
                     System.out.println("Invalid option! Please try again.");
@@ -46,37 +50,41 @@ public class Authentication {
     private void handleLogin() {
         System.out.println("\n--- USER LOGIN ---");
         System.out.print("Enter username: ");
-        String username = sc.nextLine();
-
+        String username = sc.nextLine().trim();
         System.out.print("Enter password: ");
-        String password = sc.nextLine();
+        String password = sc.nextLine().trim();
 
-        User loggedInUser = userDao.loginUser(username, password);
-
-        if (loggedInUser != null) {
+        User user = userDao.loginUser(username, password);
+        if (user != null) {
+            logDao.logAction(user.id(), "USER_LOGIN", "User logged into the system.");
             System.out.println("Login successful!");
 
-            if ("ADMIN".equalsIgnoreCase(loggedInUser.roles())) {
-                AdminMenu adminMenu = new AdminMenu(userDao, sc);
-                adminMenu.display(loggedInUser);
-            } else if ("OFFICER".equalsIgnoreCase(loggedInUser.roles())) {
-                System.out.println("Welcome, Officer " + loggedInUser.username() + "! (Officer dashboard coming soon)");
+            String role = user.roles().toUpperCase();
+            if ("ADMIN".equals(role)) {
+                AdminMenu adminMenu = new AdminMenu(userDao, logDao, sc);
+                adminMenu.display(user);
+            } else if ("OFFICER".equals(role)) {
+                ViolationDao violationDao = new ViolationDao();
+                OfficerMenu officerMenu = new OfficerMenu(violationDao, logDao, sc);
+                officerMenu.display(user);
             } else {
-                System.out.println("Welcome, " + loggedInUser.username() + "! (User dashboard coming soon)");
+                System.out.println("Access restricted: Role '" + role + "' dashboard is not available.");
             }
         }
     }
 
     private void handleRegistration() {
         System.out.println("\n--- USER REGISTRATION ---");
-        System.out.print("Enter desired username: ");
-        String username = sc.nextLine();
-
+        System.out.print("Enter username: ");
+        String username = sc.nextLine().trim();
         System.out.print("Enter password: ");
-        String password = sc.nextLine();
+        String password = sc.nextLine().trim();
+        System.out.print("Enter role (ADMIN, OFFICER, USER): ");
+        String role = sc.nextLine().trim().toUpperCase();
 
-        System.out.print("Enter role (ADMIN / OFFICER / USER): ");
-        String role = sc.nextLine();
+        if (role.isEmpty()) {
+            role = "USER";
+        }
 
         userDao.registerUser(username, password, role);
     }
